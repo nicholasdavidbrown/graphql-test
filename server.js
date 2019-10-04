@@ -1,37 +1,37 @@
 const { GraphQLServer } = require('graphql-yoga')
 const { DataLoader } = require('dataloader')
 const { apiFunctions } = require('./apis')
+const { typeDefs } = require('./schema')
 
-// Construct a schema, using GraphQL schema language
-const typeDefs = `
-    type Query {
-        contact(id: ID!): Contact!
-        contacts: [Contact!]!
-        account(id: ID!): Account!
-        accounts: [Account!]!
-        capacity(id: ID!): Capacity!
-        capacities(role: String): [Capacity!]!
+/**
+ * Query Resolvers: The GraphQL query resolvers
+ * Uses helper resolvers:
+ * - contactResolvers
+ * - accountResolvers
+ * - capacityResolvers
+ */
+const queryResolvers = {
+    contacts(obj, args, context, info) {
+        return apiFunctions.contacts().map(c => { return { id: c.id, name: c.contactName } })
+    },
+    contact(obj, args, context, info) {
+        const c = apiFunctions.contactById(args.id)
+        return { id: c.id, name: c.contactName }
+    },
+    accounts(obj, args, context, info) {
+        return apiFunctions.accounts().map(c => { return { id: c.id, name: c.accountName } })
+    },
+    account(obj, args, context, info) {
+        const c = apiFunctions.accountById(args.id)
+        return { id: c.id, name: c.accountName }
+    },
+    capacities(obj, args, context, info) {
+        return args.role ? apiFunctions.capacitiesByRole(args.role) : apiFunctions.capacities()
+    },
+    capacity(obj, args, context, info) {
+        return apiFunctions.capacityById(args.id)
     }
-
-    type Capacity {
-        id: ID!
-        account: Account!
-        contact: Contact!
-        role: String!
-    }
-
-    type Account {
-        id: ID!
-        name: String!
-        capacities: [Capacity!]!
-    }
-
-    type Contact {
-        id: ID!
-        name: String!
-        capacities: [Capacity!]!
-    }
-`
+}
 
 /**
  * Resolvers given a contact
@@ -65,35 +65,27 @@ const capacityResolvers = {
     }
 }
 
-// The root provides a resolver function for each API endpoint
-const queryResolvers = {
-    contacts(obj, args, context, info) {
-        return apiFunctions.contacts().map(c => { return { id: c.id, name: c.contactName } })
+/**
+ * Mutation Resolvers
+ */
+const mutationResolvers = {
+    createContact(obj, args, context, info) {
+        // POST to API
     },
-    contact(obj, args, context, info) {
-        // replace contactName with name
-        const c = apiFunctions.contactById(args.id)
-        return { id: c.id, name: c.contactName }
+    updateContact(obj, args, context, info) {
+        // PUT to API
     },
-    accounts(obj, args, context, info) {
-        return apiFunctions.accounts().map(c => { return { id: c.id, name: c.accountName } })
+    createAccount(obj, args, context, info) {
+        // POST to API
     },
-    account(obj, args, context, info) {
-        const c = apiFunctions.accountById(args.id)
-        return { id: c.id, name: c.accountName }
+    updateAccount(obj, args, context, info) {
+        // PUT to API
     },
-    capacities(obj, args, context, info) {
-
-        // If undefined search
-        if (args.role) {
-            return apiFunctions.capacitiesByRole(args.role)
-        } else {
-            return apiFunctions.capacities()
-        }
-
+    createCapacity(obj, args, context, info) {
+        // POST to API
     },
-    capacity(obj, args, context, info) {
-        return apiFunctions.capacityById(args.id)
+    updateCapacity(obj, args, context, info) {
+        // PUT to API
     }
 }
 
@@ -101,7 +93,8 @@ const resolvers = {
     Query: queryResolvers,
     Contact: contactResolvers,
     Account: accountResolvers,
-    Capacity: capacityResolvers
+    Capacity: capacityResolvers,
+    Mutation: mutationResolvers
 }
 
 const server = new GraphQLServer({ typeDefs, resolvers })
